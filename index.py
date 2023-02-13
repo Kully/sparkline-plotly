@@ -9,24 +9,56 @@ app = dash.Dash(__name__)
 server = app.server
 
 
-def make_sparkline(rows, cols):
+VALID_COLUMN_CHART_TYPES = [
+	"scatter",
+	"bar",
+	"text",
+	"number",
+]
+
+def make_sparkline(rows, cols, column_chart_types=None, column_names=None):
+	"""Generate a Sparklines in Plotly."""
+
+	if not column_chart_types:
+		column_chart_types = ["scatter"] * cols
+
+	# validate the parameters
+	if len(column_chart_types) != cols:
+		raise Exception("The length of `column_chart_types` must equal the value of `cols`.")
+
 	fig = make_subplots(
 		rows,
 		cols,
 		horizontal_spacing=0.02,
 		vertical_spacing=0.01,
+		subplot_titles=None if not column_names else column_names + [] * (rows*(cols-1))
 	)
+	is_first_row = True
 	for x in range(rows):
 		for y in range(cols):
-			trace = go.Scatter(
-				x=list(range(100)),
-				y=[random.random() for _ in range(100)],
-				mode="lines",
-				name="trendline",
-				marker=dict(
-					color="#000000",
-				),
-			)
+			trace_type = column_chart_types[y]
+			if trace_type.lower() == "scatter":
+				trace = go.Scatter(
+					x=list(range(100)),
+					y=[random.random() for _ in range(100)],
+					mode="lines",
+					name="trendline",
+					marker=dict(
+						color="#000000",
+					),
+					line=dict(
+						width=1,
+					)
+				)
+			elif trace_type.lower() == "bar":
+				trace = go.Bar(
+					x=[letter for letter in "ABCDEFG"],
+					y=[random.random() * 10 for _ in "ABCDEFG"],
+					name="trendline",
+					marker=dict(
+						color="#000000",
+					),
+				)
 			fig.add_trace(trace, x+1, y+1)
 
 	# style the figure
@@ -35,7 +67,7 @@ def make_sparkline(rows, cols):
 		plot_bgcolor="rgba(0,0,0,0)",
 		paper_bgcolor="rgba(0,0,0,0)",
 		margin=dict(
-			t=10,
+			t=25,
 			b=10,
 			l=10,
 			r=10,
@@ -49,8 +81,14 @@ def make_sparkline(rows, cols):
 	)
 	return fig
 
+sparkline_fig = make_sparkline(
+	rows=15,
+	cols=5,
+	column_chart_types=["scatter", "bar", "scatter", "scatter", "bar"],
+	column_names=["Column 1", "Column 2", "Column 3", "Column 4", "Column 5"],
+)
 
-sparkline_fig = make_sparkline(rows=20, cols=4)
+
 layout = html.Div([
 	html.H1("Sparklines in Plotly"),
 	html.P(
